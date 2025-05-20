@@ -547,32 +547,3 @@ class StockVisualizer:
         
         return chart_paths
 
-
-# # 테스트 코드
-# if __name__ == "__main__":
-#     visualizer = StockVisualizer()
-    
-#     # KB금융 데이터 가져오기
-#     fetcher = StockDataFetcher()
-#     kb_code = TARGET_COMPANIES["은행"][0]["code"]
-#     kb_name = TARGET_COMPANIES["은행"][0]["name"]
-    
-#     kb_data = fetcher.get_stock_data(kb_code)
-    
-#     # 주가 차트 시각화
-#     visualizer.plot_stock_price(kb_data, title=f"{kb_name} 주가 차트")
-    
-#     # 캔들스틱 차트 시각화 (최근 3개월)
-#     recent_data = kb_data.iloc[-60:]
-#     visualizer.plot_candlestick_chart(recent_data, title=f"{kb_name} 캔들스틱 차트")
-    
-#     # 기술적 지표 시각화
-#     kb_tech_data = fetcher.calculate_technical_indicators(kb_data)
-#     visualizer.plot_technical_indicators(kb_tech_data, title=f"{kb_name} 기술적 지표")
-    
-#     # 은행 업종 상위 3개 기업 성과 비교
-#     bank_codes = [company['code'] for company in TARGET_COMPANIES["은행"][:3]]
-#     bank_names = [company['name'] for company in TARGET_COMPANIES["은행"][:3]]
-#     compare_df = fetcher.compare_performance(bank_codes, bank_names)
-    
-#     visualizer.plot_stock_comparison(compare_df, title="은행 업종 상위 3개 기업 성과 비교")

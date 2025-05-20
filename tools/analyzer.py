@@ -259,6 +259,7 @@ class StockAnalyzer:
         
         # 데이터프레임으로 변환
         df = pd.DataFrame(result)
+        df.index = pd.DatetimeIndex(df.index.values, freq='B')  # 'B'는 business day를 의미
         # 총 수익률 기준 정렬
         if not df.empty:
             df = df.sort_values('총 수익률(%)', ascending=False)
@@ -352,28 +353,3 @@ class StockAnalyzer:
                 "RSI": tech_data['RSI'].iloc[-1] if 'RSI' in tech_data.columns else None
             }
         }
-
-
-# # 테스트 코드
-# if __name__ == "__main__":
-#     analyzer = StockAnalyzer()
-    
-#     # KB금융 종합 분석
-#     kb_code = TARGET_COMPANIES["은행"][0]["code"]
-#     kb_name = TARGET_COMPANIES["은행"][0]["name"]
-    
-#     analysis_result = analyzer.full_analysis(kb_code, kb_name)
-#     print(f"{kb_name} 종합 분석 결과:")
-    
-#     for category, results in analysis_result.items():
-#         print(f"\n[{category}]")
-#         if isinstance(results, dict):
-#             for key, value in results.items():
-#                 print(f"  {key}: {value}")
-#         else:
-#             print(f"  {results}")
-    
-#     # 은행 업종 성과 비교
-#     bank_performance = analyzer.compare_sector_performance("은행")
-#     print("\n은행 업종 성과 비교:")
-#     print(bank_performance)

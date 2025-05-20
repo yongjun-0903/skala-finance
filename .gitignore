@@ -4,6 +4,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 outputs/
+!outputs/reports/
+!outputs/reports/*.pdf
 .DS_Store
 .venv/
 .vscode/

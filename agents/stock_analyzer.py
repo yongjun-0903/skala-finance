@@ -2,6 +2,7 @@
 
 import os
 import json
+import numpy as np
 from datetime import datetime
 from pathlib import Path
 
@@ -115,9 +116,10 @@ class StockAnalyzer:
                         company_names = [company["name"] for company in TARGET_COMPANIES[sector_name][:5]]
                         performance = self.stock_fetcher.compare_performance(company_codes, company_names)
                         
+                        # 수정 후
                         sector_comparison[sector_name] = {
                             "qualitative_comparison": comparison,
-                            "performance_data": performance.to_dict() if not performance.empty else {}
+                            "performance_data": performance.to_dict(orient='records') if not performance.empty else {}
                         }
             
             results["sector_comparison"] = sector_comparison
@@ -127,8 +129,19 @@ class StockAnalyzer:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         results_file = self.analysis_dir / f"stock_analysis_results_{timestamp}.json"
         
+        def numpy_encoder(obj):
+            if isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, (np.bool_)):
+                return bool(obj)
+            raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
         with open(results_file, "w", encoding="utf-8") as f:
-            json.dump(results, f, ensure_ascii=False, indent=2)
+            json.dump(results, f, ensure_ascii=False, indent=2, default=numpy_encoder)
         
         results["results_file"] = str(results_file)
         print(f"주식 분석 완료. 결과 저장 위치: {results_file}")

@@ -205,41 +205,9 @@ class StockDataFetcher:
             if code in df.columns:
                 name = names[i] if i < len(names) else code
                 normalized_df[name] = df[code] / df[code].iloc[0] * 100
+                
+        # 반환하기 전에 인덱스를 문자열로 변환
+        if not normalized_df.empty and isinstance(normalized_df.index, pd.DatetimeIndex):
+            normalized_df.index = normalized_df.index.astype(str)
         
         return normalized_df
-
-
-# # 테스트 코드
-# if __name__ == "__main__":
-#     fetcher = StockDataFetcher()
-    
-#     # KB금융 데이터 가져오기
-#     kb_code = TARGET_COMPANIES["은행"][0]["code"]
-#     kb_name = TARGET_COMPANIES["은행"][0]["name"]
-#     kb_data = fetcher.get_stock_data(kb_code)
-    
-#     print(f"{kb_name} ({kb_code}) 데이터:")
-#     print(kb_data.tail())
-    
-#     # 기술적 지표 계산
-#     kb_with_indicators = fetcher.calculate_technical_indicators(kb_data)
-#     print("\n기술적 지표:")
-#     print(kb_with_indicators[['Close', 'MA20', 'RSI', 'MACD']].tail())
-    
-#     # 은행 업종 내 상위 3개 기업 성과 비교
-#     bank_codes = [company['code'] for company in TARGET_COMPANIES["은행"][:3]]
-#     bank_names = [company['name'] for company in TARGET_COMPANIES["은행"][:3]]
-#     compare_df = fetcher.compare_performance(bank_codes, bank_names)
-    
-#     print("\n은행 업종 상위 3개 기업 성과 비교:")
-#     print(compare_df.tail())
-    
-#     # KOSPI 지수 데이터 가져오기
-#     kospi_data = fetcher.get_index_data('KS11')
-#     print("\nKOSPI 지수 데이터:")
-#     print(kospi_data.tail())
-    
-#     # 월간 수익률 계산
-#     monthly_returns = fetcher.calculate_returns(kb_data, period='monthly')
-#     print("\nKB금융 월간 수익률:")
-#     print(monthly_returns.tail())

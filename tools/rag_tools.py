@@ -600,29 +600,3 @@ class FinancialRagToolkit:
         
         print(f"금융 보고서가 {filepath}에 저장되었습니다.")
         return report
-
-
-# # 테스트 코드
-# if __name__ == "__main__":
-#     # RAG 툴킷 생성
-#     toolkit = FinancialRagToolkit()
-    
-#     # API 키 설정 확인
-#     if not os.getenv("TAVILY_API_KEY"):
-#         print("경고: TAVILY_API_KEY 환경 변수가 설정되지 않았습니다. API 호출이 실패할 수 있습니다.")
-#         print("예시: export TAVILY_API_KEY='your_api_key'")
-    
-#     # 기본 검색 테스트
-#     print("\n===== 기본 검색 테스트 =====")
-#     search_results = toolkit.search_financial_info("KB금융 최근 실적", max_results=3)
-#     if search_results:
-#         print(f"검색 결과: {len(search_results)}개 항목 찾음")
-#         for idx, result in enumerate(search_results, 1):
-#             print(f"{idx}. 제목: {result.get('title', '제목 없음')}")
-#             print(f"   URL: {result.get('url', 'URL 없음')}")
-#             print(f"   내용 일부: {result.get('content', '내용 없음')[:100]}...")
-#             print("-" * 50)
-#     else:
-#         print("검색 결과가 없거나 API 호출에 실패했습니다.")
-    
-#     print("\n테스트 완료!")

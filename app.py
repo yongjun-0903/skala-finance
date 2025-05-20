@@ -136,8 +136,6 @@ def main():
     print("이 시스템은 금융 시장 트렌드와 관련 기업을 분석합니다.")
     print("예시 쿼리:")
     print("- '금융시장 최근 트렌드 분석해줘'")
-    print("- '은행 업종 분석 및 KB금융 기업 분석'")
-    print("- '삼성전자와 SK하이닉스 비교 분석'")
     print("=" * 50)
 
     # 출력 형식 선택
@@ -146,7 +144,7 @@ def main():
     print("2. PDF")
     format_choice = input("선택 (1 또는 2): ")
 
-    output_format = "markdown"  # 기본값
+    output_format = "pdf"  # 기본값
     if format_choice == "2":
         output_format = "pdf"
         print("PDF 형식으로 보고서가 생성됩니다.")

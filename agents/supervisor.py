@@ -90,7 +90,7 @@ class Supervisor:
             "market_analysis": False,
             "stock_analysis": False,
             "sector_analysis": False,
-            "report_type": "기본",
+            "report_type": "pdf",
             "targets": []
         }
         

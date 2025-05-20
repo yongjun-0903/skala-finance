@@ -142,6 +142,8 @@ class ReportCompiler:
                             # 성과 데이터를 데이터프레임으로 변환
                             if isinstance(performance, dict):
                                 df = pd.DataFrame(performance)
+                                if isinstance(df.index, pd.DatetimeIndex):
+                                    df.index = df.index.astype(str) 
                                 chart_filename = f"{sector}_업종_성과비교_{timestamp}.png"
                                 chart_path = os.path.join(self.charts_dir, chart_filename)
                                 self.visualizer.plot_stock_comparison(df, title=f"{sector} 업종 성과 비교", save_path=chart_path)
@@ -226,6 +228,10 @@ class ReportCompiler:
         
         # 주요 결과 채우기
         report["내용"]["개요"]["주요 결과"] = self._generate_key_findings(report["내용"])
+        
+        # 8. 요약(SUMMARY) 생성 및 추가
+        self.state["progress"] = 0.85
+        report["내용"]["요약"] = self._generate_executive_summary(report)
         
         # 보고서를 마크다운 파일로 저장
         self.state["progress"] = 0.9
@@ -359,7 +365,7 @@ class ReportCompiler:
                 </div>
                 {html_content}
                 <div class="footer">
-                    <p>© 2024 금융 시장 분석 시스템</p>
+                    <p>© 2025 금융 시장 분석 시스템</p>
                 </div>
             </body>
             </html>
@@ -405,6 +411,103 @@ class ReportCompiler:
             print("오류 상세 정보:")
             traceback.print_exc()
             return md_results
+
+    def _generate_executive_summary(self, report):
+        """
+        보고서 전체 내용을 종합적으로 요약하는 실행 요약(Executive Summary) 생성
+        
+        Args:
+            report (dict): 보고서 데이터
+            
+        Returns:
+            dict: 요약 정보
+        """
+        summary = {
+            "핵심 요약": "본 보고서는 금융 시장 분석 결과를 종합적으로 제시합니다.",
+            "주요 발견사항": [],
+            "투자 시사점": [],
+            "주요 지표 요약": {}
+        }
+        
+        # 보고서 내용에서 핵심 정보 추출
+        if "시장 동향" in report["내용"]:
+            trend_summary = "시장은 "
+            if isinstance(report["내용"]["시장 동향"], dict) and "최근 동향" in report["내용"]["시장 동향"]:
+                insights = report["내용"]["시장 동향"]["최근 동향"]
+                if insights and len(insights) > 0:
+                    trend_summary += f"{insights[0].get('제목', '').split('.')[-1].strip()}. "
+                    summary["주요 발견사항"].append(f"시장 동향: {insights[0].get('제목', '')}")
+                    
+            if isinstance(report["내용"]["시장 동향"], dict) and "주요 이슈" in report["내용"]["시장 동향"]:
+                issues = report["내용"]["시장 동향"]["주요 이슈"]
+                if issues and len(issues) > 0:
+                    trend_summary += f"주요 이슈로는 {issues[0].get('제목', '')}이(가) 있습니다."
+                    summary["주요 발견사항"].append(f"주요 이슈: {issues[0].get('제목', '')}")
+                    
+            summary["핵심 요약"] = trend_summary
+        
+        # 업종 분석 정보 추출
+        if "업종 분석" in report["내용"] and isinstance(report["내용"]["업종 분석"], dict):
+            if "업종 트렌드" in report["내용"]["업종 분석"]:
+                for sector, data in report["내용"]["업종 분석"]["업종 트렌드"].items():
+                    if "동향" in data and data["동향"] and len(data["동향"]) > 0:
+                        summary["주요 발견사항"].append(f"{sector} 업종: {data['동향'][0].get('제목', '')}")
+                    if "투자 전망" in data and data["투자 전망"] and len(data["투자 전망"]) > 0:
+                        summary["투자 시사점"].append(f"{sector} 업종: {data['투자 전망'][0].get('제목', '')}")
+        
+        # 기업 분석 정보 추출
+        if "기업 분석" in report["내용"] and isinstance(report["내용"]["기업 분석"], dict):
+            for company, data in report["내용"]["기업 분석"].items():
+                if company != "정보":  # "정보" 항목이 아닌 실제 기업 데이터만 처리
+                    company_summary = f"{company}: "
+                    
+                    if "투자 의견" in data and data["투자 의견"] and len(data["투자 의견"]) > 0:
+                        insight = data["투자 의견"][0].get('제목', '')
+                        company_summary += insight
+                        summary["투자 시사점"].append(f"{company}: {insight}")
+                    
+                    if "기업 개요" in data and data["기업 개요"] and len(data["기업 개요"]) > 0:
+                        summary["주요 발견사항"].append(f"{company}: {data['기업 개요'][0].get('제목', '')}")
+                    
+                    # 기술적 분석 데이터가 있으면 주요 지표에 추가
+                    if "기술적 분석" in data and isinstance(data["기술적 분석"], dict):
+                        tech_data = {}
+                        for key, value in data["기술적 분석"].items():
+                            if key in ["RSI", "MACD", "Signal", "현재가", "전일대비", "등락률"]:
+                                tech_data[key] = value
+                        
+                        if tech_data:
+                            summary["주요 지표 요약"][company] = tech_data
+        
+        # 국제 정세 분석 정보 추출
+        if "국제 정세 분석" in report["내용"] and isinstance(report["내용"]["국제 정세 분석"], dict):
+            if "트럼프 정책 영향" in report["내용"]["국제 정세 분석"]:
+                impact = report["내용"]["국제 정세 분석"]["트럼프 정책 영향"]
+                if isinstance(impact, str):
+                    # 문자열에서 첫 문장만 추출
+                    first_sentence = impact.split('.')[0] + '.' if '.' in impact else impact
+                    summary["주요 발견사항"].append(f"트럼프 정책: {first_sentence}")
+                
+            if "산업별 영향" in report["내용"]["국제 정세 분석"]:
+                for industry, impact in report["내용"]["국제 정세 분석"]["산업별 영향"].items():
+                    if isinstance(impact, str):
+                        # 문자열에서 첫 문장만 추출
+                        first_sentence = impact.split('.')[0] + '.' if '.' in impact else impact
+                        summary["투자 시사점"].append(f"{industry} 산업: {first_sentence}")
+        
+        # 투자 전략 정보 추출
+        if "투자 전략" in report["내용"] and isinstance(report["내용"]["투자 전략"], dict):
+            if "단기 전략" in report["내용"]["투자 전략"] and report["내용"]["투자 전략"]["단기 전략"]:
+                summary["투자 시사점"].append(f"단기 전략: {report['내용']['투자 전략']['단기 전략'][0]}")
+            
+            if "중장기 전략" in report["내용"]["투자 전략"] and report["내용"]["투자 전략"]["중장기 전략"]:
+                summary["투자 시사점"].append(f"중장기 전략: {report['내용']['투자 전략']['중장기 전략'][0]}")
+        
+        # 발견사항과 시사점 최대 5개로 제한
+        summary["주요 발견사항"] = summary["주요 발견사항"][:5]
+        summary["투자 시사점"] = summary["투자 시사점"][:5]
+        
+        return summary
     
     def _extract_market_insights(self, results):
         """웹 검색 결과에서 인사이트 추출"""
@@ -532,9 +635,44 @@ class ReportCompiler:
             f.write(f"**작성일: {report['작성일']}**\n\n")
             f.write(f"</div>\n\n")
             
+            # SUMMARY 챕터 추가 (보고서 맨 앞에 배치)
+            f.write("## 📊 SUMMARY\n\n")
+            
+            # 요약 정보 (보고서 내용을 기반으로 생성)
+            if "요약" in report["내용"]:
+                summary = report["내용"]["요약"]
+                
+                f.write(f"### 핵심 요약\n{summary.get('핵심 요약', '')}\n\n")
+                
+                if "주요 발견사항" in summary and summary["주요 발견사항"]:
+                    f.write("### 주요 발견사항\n\n")
+                    for finding in summary["주요 발견사항"]:
+                        f.write(f"- **{finding}**\n")
+                    f.write("\n")
+                
+                if "투자 시사점" in summary and summary["투자 시사점"]:
+                    f.write("### 투자 시사점\n\n")
+                    for implication in summary["투자 시사점"]:
+                        f.write(f"- **{implication}**\n")
+                    f.write("\n")
+                
+                if "주요 지표 요약" in summary and summary["주요 지표 요약"]:
+                    f.write("### 주요 지표 요약\n\n")
+                    f.write("| 기업 | 현재가 | 등락률 | RSI | MACD |\n")
+                    f.write("|------|--------|--------|-----|------|\n")
+                    for company, indicators in summary["주요 지표 요약"].items():
+                        current_price = indicators.get("현재가", "-")
+                        change_rate = indicators.get("등락률", "-")
+                        rsi = indicators.get("RSI", "-")
+                        macd = indicators.get("MACD", "-")
+                        f.write(f"| {company} | {current_price} | {change_rate} | {rsi} | {macd} |\n")
+                    f.write("\n\n")
+            
             # 목차 (네비게이션 리스트로)
             f.write("## 📑 목차\n\n")
-            for i, item in enumerate(report["목차"], 1):
+            # SUMMARY를 목차 첫 번째 항목으로 추가
+            f.write(f"1. [SUMMARY](#summary)\n")
+            for i, item in enumerate(report["목차"], 2):  # 2부터 시작 (SUMMARY가 1번)
                 f.write(f"{i}. [{item}](#{item.lower().replace(' ', '-')})\n")
             f.write("\n\n")
             
