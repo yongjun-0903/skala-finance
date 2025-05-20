@@ -244,7 +244,7 @@ class ReportCompiler:
     
     def generate_pdf_report(self, query_data, market_research_results, stock_analysis_results, geopolitical_analysis_results=None):
         """
-        puppeteer를 사용하여 PDF 보고서 생성
+        WeasyPrint를 사용하여 PDF 보고서 생성
         
         Args:
             query_data (dict): 처리된 쿼리 데이터
@@ -266,8 +266,15 @@ class ReportCompiler:
         try:
             import markdown
             import os
-            import tempfile
-            import json
+            
+            # WeasyPrint 설치 여부 확인
+            try:
+                from weasyprint import HTML
+                print("WeasyPrint 라이브러리가 설치되어 있습니다.")
+            except ImportError:
+                print("WeasyPrint 라이브러리가 설치되어 있지 않습니다.")
+                print("설치하려면 터미널에서 다음 명령을 실행하세요: pip install weasyprint")
+                return md_results
             
             markdown_file = md_results["report_path"]
             
@@ -290,6 +297,7 @@ class ReportCompiler:
                 <meta charset="UTF-8">
                 <title>{md_results["report"]["제목"]}</title>
                 <style>
+                    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
                     body {{
                         font-family: 'Noto Sans KR', Arial, sans-serif;
                         line-height: 1.6;
@@ -311,7 +319,37 @@ class ReportCompiler:
                         padding-bottom: 5px;
                         margin-top: 25px;
                     }}
-                    /* 추가 스타일 생략... */
+                    h3 {{
+                        color: #0099ff;
+                        margin-top: 20px;
+                    }}
+                    table {{
+                        border-collapse: collapse;
+                        width: 100%;
+                        margin: 20px 0;
+                    }}
+                    th, td {{
+                        border: 1px solid #ddd;
+                        padding: 8px;
+                        text-align: left;
+                    }}
+                    th {{
+                        background-color: #f2f2f2;
+                    }}
+                    img {{
+                        max-width: 100%;
+                        height: auto;
+                    }}
+                    .header {{
+                        text-align: center;
+                        margin-bottom: 30px;
+                    }}
+                    .footer {{
+                        text-align: center;
+                        margin-top: 30px;
+                        font-size: 0.9em;
+                        color: #777;
+                    }}
                 </style>
             </head>
             <body>
@@ -328,82 +366,16 @@ class ReportCompiler:
             """
             
             # 임시 HTML 파일 생성
-            temp_html_file = os.path.splitext(markdown_file)[0] + '_temp.html'
-            # 먼저 경로 변환을 수행
-            temp_html_file_fixed = temp_html_file.replace('\\', '/')
-            pdf_filepath_fixed = pdf_filepath.replace('\\', '/')
-            with open(temp_html_file_fixed, 'w', encoding='utf-8') as f:
+            temp_html_file = os.path.join(self.reports_dir, os.path.splitext(os.path.basename(markdown_file))[0] + '_temp.html')
+            with open(temp_html_file, 'w', encoding='utf-8') as f:
                 f.write(styled_html)
             
             print(f"임시 HTML 파일 생성: {temp_html_file}")
             
-            # 그 다음 f-string에 사용
-            script_content = f"""
-            const puppeteer = require('puppeteer');
-
-            (async () => {{
-                const browser = await puppeteer.launch({{
-                    headless: 'new'
-                }});
-                const page = await browser.newPage();
-                await page.goto('file://{temp_html_file_fixed}', {{
-                    waitUntil: 'networkidle0'
-                }});
-                await page.pdf({{
-                    path: '{pdf_filepath_fixed}',
-                    format: 'A4',
-                    margin: {{
-                        top: '1cm',
-                        right: '1cm',
-                        bottom: '1cm',
-                        left: '1cm'
-                    }},
-                    printBackground: true
-                }});
-                await browser.close();
-                console.log('PDF generated successfully');
-            }})();
-            """
-            
-            # 임시 스크립트 파일 생성
-            temp_script_file = os.path.join(tempfile.gettempdir(), 'pdf_generator.js')
-            with open(temp_script_file, 'w', encoding='utf-8') as f:
-                f.write(script_content)
-            
-            print(f"임시 스크립트 파일 생성: {temp_script_file}")
-            
-            # puppeteer가 설치되어 있는지 확인하고 필요한 경우 설치
-            import subprocess
+            # HTML을 PDF로 변환
             try:
-                # package.json 생성
-                package_dir = os.path.join(tempfile.gettempdir(), 'pdf_generator')
-                os.makedirs(package_dir, exist_ok=True)
-                
-                package_json = {
-                    "name": "pdf-generator",
-                    "version": "1.0.0",
-                    "description": "Generate PDF from HTML",
-                    "dependencies": {
-                        "puppeteer": "^22.0.0"
-                    }
-                }
-                
-                package_json_path = os.path.join(package_dir, 'package.json')
-                with open(package_json_path, 'w', encoding='utf-8') as f:
-                    json.dump(package_json, f)
-                
-                # puppeteer 설치
-                print("puppeteer 설치 중...")
-                subprocess.run(['npm', 'install'], cwd=package_dir, check=True)
-                
-                # 스크립트 실행
-                print("Node.js 스크립트 실행 중...")
-                subprocess.run(['node', temp_script_file], cwd=package_dir, check=True)
-                
-                # 임시 파일 삭제
-                os.remove(temp_html_file)
-                os.remove(temp_script_file)
-                
+                print("HTML을 PDF로 변환 중...")
+                HTML(temp_html_file).write_pdf(pdf_filepath)
                 print(f"PDF 보고서 생성 완료. 저장 위치: {pdf_filepath}")
                 
                 # 자동으로 PDF 열기
@@ -426,7 +398,7 @@ class ReportCompiler:
                 print("오류 상세 정보:")
                 traceback.print_exc()
                 return md_results
-                
+                    
         except Exception as e:
             import traceback
             print(f"PDF 변환 중 오류 발생: {e}")

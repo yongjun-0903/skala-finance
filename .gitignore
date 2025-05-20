@@ -8,3 +8,5 @@ outputs/
 .venv/
 .vscode/
 .idea/
+temp/
+data/
